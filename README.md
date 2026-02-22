@@ -14,7 +14,7 @@ A REST API for querying galaxy catalogue data, built on the [GLADE+](https://gla
 ### 1. Prerequisites
 
 - PostgreSQL 12+ with PostGIS extension
-- Python 3.10+ (Conda recommended)
+- Python 3.10+
 
 ### 2. Create the database
 
@@ -125,12 +125,52 @@ curl "http://localhost:8000/galaxies/cone_search?ra=180&dec=-30&radius=2"
 
 Galaxy data is sourced from the **GLADE+ v7.5.4** catalogue (Dálya et al. 2022), which aggregates data from SDSS, 2MASS, HyperLEDA, and other surveys. The catalogue is designed for identifying electromagnetic counterparts to gravitational wave events.
 
-Key columns used:
+### Identifiers
 
-| Column | Description |
-|---|---|
-| `ra`, `dec` | Sky coordinates (J2000, degrees) |
-| `redshift` | Spectroscopic/photometric redshift |
-| `luminosity_distance` | Luminosity distance in Mpc |
-| `apparent_mag_b` | Apparent B-band magnitude |
-| `apparent_mag_k` | Apparent K-band magnitude |
+| DB Column | Source Column | Description |
+|---|---|---|
+| `glade_id` | `GLADE+` | GLADE+ catalogue number |
+| `pgc` | `PGC` | Principal Galaxies Catalogue number |
+| `gwgc` | `GWGC` | Name in the GWGC catalogue |
+| `hyperleda` | `HyperLEDA` | Name in the HyperLEDA catalogue |
+| `twomass` | `2MASS` | Name in the 2MASS XSC catalogue |
+| `wisexscos` | `WISExSCOS` | Name in the WISExSuperCOSMOS catalogue |
+| `sdss_dr16q` | `SDSS-DR16Q` | Name in the SDSS-DR16Q catalogue |
+| `object_type` | `Type` | `G` = galaxy, `Q` = quasar |
+
+### Sky Coordinates
+
+| DB Column | Source Column | Unit | Description |
+|---|---|---|---|
+| `ra` | `RAJ2000` | degrees | Right Ascension (J2000, 0–360) |
+| `dec` | `DEJ2000` | degrees | Declination (J2000, −90–90) |
+
+### Redshift
+
+| DB Column | Source Column | Description |
+|---|---|---|
+| `redshift_helio` | `zhelio` | Redshift in the heliocentric frame |
+| `redshift_cmb` | `zcmb` | Redshift converted to the CMB frame |
+
+### Distance
+
+| DB Column | Source Column | Unit | Description |
+|---|---|---|---|
+| `luminosity_distance` | `dL` | Mpc | Luminosity distance |
+| `e_luminosity_distance` | `e_dL` | Mpc | 1-sigma error of luminosity distance |
+
+### Photometry
+
+| DB Column | Source Column | Unit | Description |
+|---|---|---|---|
+| `apparent_mag_b` | `Bmag` | mag | Apparent B-band magnitude |
+| `apparent_mag_k` | `Kmag` | mag | Apparent K-band magnitude |
+
+### Physical Properties
+
+| DB Column | Source Column | Unit | Description |
+|---|---|---|---|
+| `stellar_mass` | `M*` | 10¹⁰ M☉ | Stellar mass |
+| `log_bns_rate` | `logRate` | log(Gyr⁻¹) | log₁₀ of estimated BNS merger rate |
+
+> Many fields are optional — missing values in the source catalogue are stored as `NULL`.
