@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# VS Code
+.vscode/
+
+# Data files (too large for git)
+*.csv
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
