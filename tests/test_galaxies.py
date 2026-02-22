@@ -197,6 +197,45 @@ def test_cone_search_missing_params():
     assert r.status_code == 422
 
 
+def test_cone_search_invalid_ra():
+    r = client.get("/galaxies/cone_search?ra=400&dec=0&radius=1")
+    assert r.status_code == 422
+
+
+def test_cone_search_invalid_dec():
+    r = client.get("/galaxies/cone_search?ra=180&dec=95&radius=1")
+    assert r.status_code == 422
+
+
+def test_cone_search_negative_radius():
+    r = client.get("/galaxies/cone_search?ra=180&dec=0&radius=-1")
+    assert r.status_code == 422
+
+
+def test_cone_search_zero_radius():
+    r = client.get("/galaxies/cone_search?ra=180&dec=0&radius=0")
+    assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# GET /galaxies/search  — input validation
+# ---------------------------------------------------------------------------
+
+def test_search_negative_redshift_rejected():
+    r = client.get("/galaxies/search?redshift_min=-0.1")
+    assert r.status_code == 422
+
+
+def test_search_negative_dist_rejected():
+    r = client.get("/galaxies/search?dist_min=-50")
+    assert r.status_code == 422
+
+
+def test_search_zero_dist_rejected():
+    r = client.get("/galaxies/search?dist_max=0")
+    assert r.status_code == 422
+
+
 def test_cone_search_pagination():
     page1 = client.get("/galaxies/cone_search?ra=182&dec=12&radius=10&limit=5&offset=0").json()
     page2 = client.get("/galaxies/cone_search?ra=182&dec=12&radius=10&limit=5&offset=5").json()
