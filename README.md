@@ -40,6 +40,15 @@ psql -U postgres -d glade_api -f schema.sql
 python load_data.py
 ```
 
+Then populate the PostGIS spatial index column (required for cone search):
+
+```bash
+psql -U postgres -d glade_api -c "
+UPDATE galaxies
+SET sky_position = ST_SetSRID(ST_MakePoint(ra, dec), 4326)
+WHERE ra IS NOT NULL AND dec IS NOT NULL;"
+```
+
 ### 6. Run the API
 
 ```bash
@@ -66,11 +75,11 @@ List galaxies with pagination.
 
 | Param | Type | Default | Description |
 |---|---|---|---|
-| `limit` | int | 20 | Results per page |
+| `limit` | int | 100 | Results per page (max 1000) |
 | `offset` | int | 0 | Pagination offset |
 
 ```bash
-curl "http://localhost:8000/galaxies?limit=20&offset=0"
+curl "http://localhost:8000/galaxies/?limit=5&offset=0"
 ```
 
 ---
@@ -93,7 +102,7 @@ Filter galaxies by redshift and/or luminosity distance range.
 | `redshift_max` | float | Maximum redshift |
 | `dist_min` | float | Minimum luminosity distance (Mpc) |
 | `dist_max` | float | Maximum luminosity distance (Mpc) |
-| `limit` | int | Results per page (default 20) |
+| `limit` | int | Results per page (max 1000, default 100) |
 | `offset` | int | Pagination offset (default 0) |
 
 ```bash
@@ -111,7 +120,7 @@ Find galaxies within a given angular radius of a sky position. Requires PostGIS.
 | `ra` | float | Right Ascension in degrees (0–360) |
 | `dec` | float | Declination in degrees (−90–90) |
 | `radius` | float | Search radius in degrees |
-| `limit` | int | Results per page (default 20) |
+| `limit` | int | Results per page (max 1000, default 100) |
 | `offset` | int | Pagination offset (default 0) |
 
 ```bash
@@ -174,3 +183,21 @@ Galaxy data is sourced from the **GLADE+ v7.5.4** catalogue (Dálya et al. 2022)
 | `log_bns_rate` | `logRate` | log(Gyr⁻¹) | log₁₀ of estimated BNS merger rate |
 
 > Many fields are optional — missing values in the source catalogue are stored as `NULL`.
+
+---
+
+## Tests
+
+```bash
+pytest tests/ -v
+```
+
+22 tests covering all endpoints: schema validation, pagination, filter range enforcement, cone search geometry, and error handling (404, 422).
+
+## Configuration
+
+The database URL defaults to `postgresql:///glade_api` (Unix socket, current OS user — matches `load_data.py`). Override with the `DATABASE_URL` environment variable:
+
+```bash
+DATABASE_URL="postgresql://user:password@host/glade_api" uvicorn app.main:app --reload
+```
