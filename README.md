@@ -1,4 +1,4 @@
-# GalaxyCatelog
+# GalaxyCatalog
 
 A REST API for querying galaxy catalogue data, built on the [GLADE+](https://glade.elte.hu/) public catalogue. Supports astronomical queries including redshift/distance filtering and cone searches — the same query types used in gravitational wave follow-up pipelines like [UpGLADE](https://upglade.elte.hu/).
 

@@ -1,5 +1,5 @@
 """
-Tests for the GalaxyCatelog API endpoints.
+Tests for the GalaxyCatalog API endpoints.
 Uses FastAPI's TestClient against the live database (glade_api).
 """
 import pytest

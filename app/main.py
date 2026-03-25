@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.routers import galaxies
 
-app = FastAPI(title="GalaxyCatelog API")
+app = FastAPI(title="GalaxyCatalog API")
 
 
 @app.get("/health")
