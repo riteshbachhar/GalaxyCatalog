@@ -2,7 +2,7 @@ import csv
 import psycopg2
 
 DATA_FILE = "glade_sample.csv"
-DB_NAME = "glade_api"
+DB_NAME = "glade_sample"
 
 
 def parse_float(value):

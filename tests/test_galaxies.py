@@ -1,6 +1,6 @@
 """
 Tests for the GalaxyCatalog API endpoints.
-Uses FastAPI's TestClient against the live database (glade_api).
+Uses FastAPI's TestClient against the live database (glade_sample).
 """
 import pytest
 from fastapi.testclient import TestClient

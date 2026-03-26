@@ -18,9 +18,11 @@ A REST API for querying galaxy catalogue data, built on the [GLADE+](https://gla
 
 ### 2. Create the database
 
+On macOS (Homebrew), connect via your OS user — no `-U postgres` needed:
+
 ```bash
-psql -U postgres -c "CREATE DATABASE glade_api;"
-psql -U postgres -d glade_api -c "CREATE EXTENSION postgis;"
+psql -d postgres -c "CREATE DATABASE glade_sample;"
+psql -d glade_sample -c "CREATE EXTENSION postgis;"
 ```
 
 ### 3. Install dependencies
@@ -36,14 +38,14 @@ Download the GLADE+ catalogue from [VizieR](https://vizier.cds.unistra.fr/viz-bi
 ### 5. Create the schema and load data
 
 ```bash
-psql -U postgres -d glade_api -f schema.sql
+psql -d glade_sample -f schema.sql
 python load_data.py
 ```
 
 Then populate the PostGIS spatial index column (required for cone search):
 
 ```bash
-psql -U postgres -d glade_api -c "
+psql -d glade_sample -c "
 UPDATE galaxies
 SET sky_position = ST_SetSRID(ST_MakePoint(ra, dec), 4326)
 WHERE ra IS NOT NULL AND dec IS NOT NULL;"
@@ -196,8 +198,8 @@ pytest tests/ -v
 
 ## Configuration
 
-The database URL defaults to `postgresql:///glade_api` (Unix socket, current OS user — matches `load_data.py`). Override with the `DATABASE_URL` environment variable:
+The database URL defaults to `postgresql:///glade_sample` (Unix socket, current OS user). Override with the `DATABASE_URL` environment variable:
 
 ```bash
-DATABASE_URL="postgresql://user:password@host/glade_api" uvicorn app.main:app --reload
+DATABASE_URL="postgresql://user:password@host/glade_sample" uvicorn app.main:app --reload
 ```
