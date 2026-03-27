@@ -76,7 +76,13 @@ for row in reader:
     )
     count += 1
 
+cur.execute("""
+    UPDATE galaxies
+    SET sky_position = ST_SetSRID(ST_MakePoint(ra, dec), 4326)
+    WHERE ra IS NOT NULL AND dec IS NOT NULL
+""")
 conn.commit()
 cur.close()
 conn.close()
 print(f"Inserted {count} galaxies")
+print("sky_position populated")

@@ -51,9 +51,4 @@ CREATE INDEX IF NOT EXISTS idx_galaxies_glade_id    ON galaxies (glade_id);
 -- Spatial index for cone search
 CREATE INDEX IF NOT EXISTS idx_galaxies_sky         ON galaxies USING GIST (sky_position);
 
--- Populate sky_position from ra/dec after ingestion
--- Run this once after load_data.py completes:
---
---   UPDATE galaxies
---   SET sky_position = ST_SetSRID(ST_MakePoint(ra, dec), 4326)
---   WHERE ra IS NOT NULL AND dec IS NOT NULL;
+-- sky_position is populated automatically by load_data.py after ingestion.

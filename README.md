@@ -33,7 +33,13 @@ pip install -r requirements.txt
 
 ### 4. Get the data
 
-Download the GLADE+ catalogue from [VizieR](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=VII/281) and place the exported CSV in the project root as `glade_sample.csv`.
+Download the GLADE+ catalogue from VizieR using their ASU interface (up to 100,000 rows, all columns):
+
+```bash
+curl -o glade_sample.csv "https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/291/gladep&-out.max=100000&-out=**"
+```
+
+Or open the URL directly in a browser to download manually. Place the file in the project root as `glade_sample.csv`.
 
 ### 5. Create the schema and load data
 
@@ -42,14 +48,7 @@ psql -d glade_sample -f schema.sql
 python load_data.py
 ```
 
-Then populate the PostGIS spatial index column (required for cone search):
-
-```bash
-psql -d glade_sample -c "
-UPDATE galaxies
-SET sky_position = ST_SetSRID(ST_MakePoint(ra, dec), 4326)
-WHERE ra IS NOT NULL AND dec IS NOT NULL;"
-```
+`load_data.py` inserts all rows and automatically populates the PostGIS `sky_position` column (required for cone search).
 
 ### 6. Run the API
 
