@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS q3c;
 
 CREATE TABLE IF NOT EXISTS galaxies (
     id                    SERIAL PRIMARY KEY,
@@ -35,9 +35,6 @@ CREATE TABLE IF NOT EXISTS galaxies (
     stellar_mass          DOUBLE PRECISION,         -- 10^10 solar masses
     log_bns_rate          DOUBLE PRECISION,         -- log10(BNS merger rate / Gyr)
 
-    -- Spatial index column (PostGIS)
-    sky_position          GEOMETRY(POINT, 4326),
-
     created_at            TIMESTAMP DEFAULT NOW()
 );
 
@@ -48,7 +45,6 @@ CREATE INDEX IF NOT EXISTS idx_galaxies_redshift    ON galaxies (redshift_helio)
 CREATE INDEX IF NOT EXISTS idx_galaxies_distance    ON galaxies (luminosity_distance);
 CREATE INDEX IF NOT EXISTS idx_galaxies_glade_id    ON galaxies (glade_id);
 
--- Spatial index for cone search
-CREATE INDEX IF NOT EXISTS idx_galaxies_sky         ON galaxies USING GIST (sky_position);
-
--- sky_position is populated automatically by load_data.py after ingestion.
+-- Q3C spatial index for cone search (works directly on ra/dec)
+CREATE INDEX IF NOT EXISTS idx_galaxies_q3c         ON galaxies (q3c_ang2ipix(ra, dec));
+CLUSTER galaxies USING idx_galaxies_q3c;

@@ -1,7 +1,7 @@
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID
 
 from app.database import get_db
 from app.models import Galaxy
@@ -46,18 +46,24 @@ def cone_search(
     ra: float = Query(..., ge=0, le=360, description="Right Ascension in degrees (0–360)"),
     dec: float = Query(..., ge=-90, le=90, description="Declination in degrees (-90–90)"),
     radius: float = Query(..., gt=0, description="Search radius in degrees"),
+    redshift_min: Optional[float] = Query(default=None, ge=0),
+    redshift_max: Optional[float] = Query(default=None, ge=0),
+    dist_min: Optional[float] = Query(default=None, gt=0),
+    dist_max: Optional[float] = Query(default=None, gt=0),
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
-    point = ST_SetSRID(ST_MakePoint(ra, dec), 4326)
-    return (
-        db.query(Galaxy)
-        .filter(ST_DWithin(Galaxy.sky_position, point, radius))
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    q = db.query(Galaxy).filter(func.q3c_radial_query(Galaxy.ra, Galaxy.dec, ra, dec, radius))
+    if redshift_min is not None:
+        q = q.filter(Galaxy.redshift_helio >= redshift_min)
+    if redshift_max is not None:
+        q = q.filter(Galaxy.redshift_helio <= redshift_max)
+    if dist_min is not None:
+        q = q.filter(Galaxy.luminosity_distance >= dist_min)
+    if dist_max is not None:
+        q = q.filter(Galaxy.luminosity_distance <= dist_max)
+    return q.offset(offset).limit(limit).all()
 
 
 @router.get("/{galaxy_id}", response_model=GalaxyResponse)

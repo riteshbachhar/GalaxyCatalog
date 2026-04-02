@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, func
-from geoalchemy2 import Geometry
 from app.database import Base
 
 
@@ -25,5 +24,4 @@ class Galaxy(Base):
     apparent_mag_k = Column(Float)
     stellar_mass = Column(Float)
     log_bns_rate = Column(Float)
-    sky_position = Column(Geometry("POINT", srid=4326))
     created_at = Column(DateTime, server_default=func.now())
