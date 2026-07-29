@@ -64,8 +64,6 @@ def test_list_item_schema():
     assert "dec" in g
     assert "redshift_helio" in g
     assert "luminosity_distance" in g
-    # sky_position geometry column must NOT leak into the response
-    assert "sky_position" not in g
 
 
 # ---------------------------------------------------------------------------

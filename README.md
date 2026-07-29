@@ -5,7 +5,7 @@ A REST API for querying galaxy catalogue data, built on the [GLADE+](https://gla
 ## Tech Stack
 
 - **FastAPI** — REST API framework with auto-generated `/docs`
-- **PostgreSQL + PostGIS** — spatial database for cone search queries
+- **PostgreSQL + [Q3C](https://github.com/segasai/q3c)** — Quad Tree Cube spatial indexing for cone search queries
 - **SQLAlchemy 2.0** — ORM and query building
 - **Python 3.10+**
 
@@ -13,8 +13,16 @@ A REST API for querying galaxy catalogue data, built on the [GLADE+](https://gla
 
 ### 1. Prerequisites
 
-- PostgreSQL 12+ with PostGIS extension
+- PostgreSQL 12+ with the Q3C extension
 - Python 3.10+
+
+Q3C is not bundled with PostgreSQL and has no Homebrew formula — build it from source
+against your PostgreSQL install (`pg_config` must be on your `PATH`):
+
+```bash
+git clone https://github.com/segasai/q3c.git && cd q3c
+make && make install
+```
 
 ### 2. Create the database
 
@@ -22,7 +30,7 @@ On macOS (Homebrew), connect via your OS user — no `-U postgres` needed:
 
 ```bash
 psql -d postgres -c "CREATE DATABASE glade_sample;"
-psql -d glade_sample -c "CREATE EXTENSION postgis;"
+psql -d glade_sample -c "CREATE EXTENSION q3c;"
 ```
 
 ### 3. Install dependencies
@@ -48,7 +56,7 @@ psql -d glade_sample -f schema.sql
 python load_data.py
 ```
 
-`load_data.py` inserts all rows and automatically populates the PostGIS `sky_position` column (required for cone search).
+`schema.sql` creates the table plus the Q3C spatial index (`q3c_ang2ipix(ra, dec)`) that cone search relies on; `load_data.py` then inserts all rows. Q3C indexes the `ra`/`dec` columns directly, so there is no separate geometry column to populate.
 
 ### 6. Run the API
 
@@ -114,20 +122,29 @@ curl "http://localhost:8000/galaxies/search?redshift_min=0.01&redshift_max=0.05"
 ---
 
 ### `GET /galaxies/cone_search`
-Find galaxies within a given angular radius of a sky position. Requires PostGIS.
+Find galaxies within a given angular radius of a sky position, optionally narrowed by redshift and distance. Requires the Q3C extension.
 
 | Param | Type | Description |
 |---|---|---|
 | `ra` | float | Right Ascension in degrees (0–360) |
 | `dec` | float | Declination in degrees (−90–90) |
 | `radius` | float | Search radius in degrees |
+| `redshift_min` | float | Minimum redshift |
+| `redshift_max` | float | Maximum redshift |
+| `dist_min` | float | Minimum luminosity distance (Mpc) |
+| `dist_max` | float | Maximum luminosity distance (Mpc) |
 | `limit` | int | Results per page (max 1000, default 100) |
 | `offset` | int | Pagination offset (default 0) |
 
 ```bash
 # Galaxies within 2 degrees of (RA=180, Dec=-30)
 curl "http://localhost:8000/galaxies/cone_search?ra=180&dec=-30&radius=2"
+
+# Same cone, restricted to a GW-style distance shell
+curl "http://localhost:8000/galaxies/cone_search?ra=180&dec=-30&radius=2&dist_min=100&dist_max=400"
 ```
+
+The query is served by `q3c_radial_query()`, which does an exact angular-distance test against the quad-tree-cube index. RA wraparound at 0°/360° and positions near the poles are handled correctly.
 
 ---
 
@@ -193,7 +210,7 @@ Galaxy data is sourced from the **GLADE+ v7.5.4** catalogue (Dálya et al. 2022)
 pytest tests/ -v
 ```
 
-22 tests covering all endpoints: schema validation, pagination, filter range enforcement, cone search geometry, and error handling (404, 422).
+29 tests covering all endpoints: schema validation, pagination, filter range enforcement, cone search geometry, and error handling (404, 422).
 
 ## Configuration
 

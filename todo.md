@@ -8,7 +8,7 @@ A REST API that serves galaxy catalogue data with astronomical queries, built as
 
 - **Language:** Python
 - **API Framework:** FastAPI
-- **Database:** PostgreSQL + PostGIS (spatial queries)
+- **Database:** PostgreSQL + Q3C (spatial queries)
 - **ORM:** SQLAlchemy
 - **Data Source:** GLADE+ public catalogue (subset)
 - **Optional:** Docker, pytest
@@ -72,8 +72,8 @@ CREATE TABLE galaxies (
 
 **Goal:** Build functional API endpoints with astronomical query support.
 
-- [ ] Install PostGIS extension for spatial queries
-- [ ] Add a geometry column to the galaxies table for sky coordinates
+- [x] Install Q3C extension for spatial queries
+- [x] Add a Q3C index on `q3c_ang2ipix(ra, dec)` (no geometry column needed)
 - [ ] Build the following endpoints:
 
 | Endpoint | Method | Description |
