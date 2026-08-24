@@ -1,9 +1,10 @@
 import csv
 import psycopg2
+import os
 
 DATA_FILE = "glade_sample.csv"
-DB_NAME = "glade_sample"
-
+#DB_NAME = "glade_sample"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql:///glade_sample")
 
 def parse_float(value):
     s = value.strip()
@@ -20,7 +21,7 @@ def parse_str(value):
     return s if s and s != "-" else None
 
 
-conn = psycopg2.connect(dbname=DB_NAME)
+conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
 with open(DATA_FILE, "r") as f:

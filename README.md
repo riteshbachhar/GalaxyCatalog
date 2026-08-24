@@ -68,6 +68,31 @@ API is available at `http://localhost:8000`. Interactive docs at `http://localho
 
 ---
 
+## Running with Docker
+
+```bash
+docker network create galaxynet
+docker build -t galaxy-db docker/postgres
+docker build -t galaxy-api .
+docker run -d --name db --network galaxynet -p 5433:5432 \
+  -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=glade_sample galaxy-db
+psql -h localhost -p 5433 -U postgres -d glade_sample -f schema.sql
+DATABASE_URL=postgresql://postgres:pw@localhost:5433/glade_sample python load_data.py
+docker run -d --name api --network galaxynet -p 8000:8000 \
+  -e DATABASE_URL=postgresql://postgres:pw@db:5432/glade_sample galaxy-api
+```
+
+`docker/postgres` builds PostgreSQL 16 with Q3C compiled in; `schema.sql` enables the
+extension and creates the index. Port 5433 is used on the host to avoid clashing with a
+local PostgreSQL on 5432. The two containers share the `galaxynet` network, so the API
+reaches the database as `db:5432` while your host tools use `localhost:5433`.
+
+The `psql` and `load_data.py` steps run from the host and will prompt for the password
+(`pw`) — set `PGPASSWORD=pw` to skip the prompt. The API is then at
+`http://localhost:8000`.
+
+---
+
 ## API Reference
 
 ### `GET /health`
