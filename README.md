@@ -2,6 +2,20 @@
 
 A REST API for querying galaxy catalogue data, built on the [GLADE+](https://glade.elte.hu/) public catalogue. Supports astronomical queries including redshift/distance filtering and cone searches — the same query types used in gravitational wave follow-up pipelines like [UpGLADE](https://upglade.elte.hu/).
 
+## Live API
+
+A public instance runs at **<https://galaxyapi.bachhar.org>** — interactive docs at
+<https://galaxyapi.bachhar.org/docs>.
+
+```bash
+curl -s "https://galaxyapi.bachhar.org/health"
+curl -s "https://galaxyapi.bachhar.org/galaxies/?limit=5"
+curl -s "https://galaxyapi.bachhar.org/galaxies/cone_search?ra=180&dec=0&radius=5&limit=5"
+```
+
+Read-only, unauthenticated, and served from a modest host — please keep request rates
+reasonable. The rest of this README covers running your own instance.
+
 ## Tech Stack
 
 - **FastAPI** — REST API framework with auto-generated `/docs`
@@ -78,9 +92,12 @@ docker network create galaxynet
 docker build -t galaxy-db docker/postgres      # postgres:16 + Q3C extension
 docker build -t galaxy-api .
 
+# Secret — hex, so no shell-special characters break the connection string
+export POSTGRES_PASSWORD=$(openssl rand -hex 24)
+
 # Database
 docker run -d --name db --network galaxynet \
-  -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=glade_sample galaxy-db
+  -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" -e POSTGRES_DB=glade_sample galaxy-db
 
 # Schema
 docker exec -i db psql -U postgres -d glade_sample < schema.sql
@@ -89,13 +106,16 @@ docker exec -i db psql -U postgres -d glade_sample < schema.sql
 curl -o glade_sample.csv "https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/291/gladep&-out.max=100000&-out=**"
 docker run --rm --network galaxynet \
   -v "$(pwd)/glade_sample.csv:/app/glade_sample.csv:ro" \
-  -e DATABASE_URL=postgresql://postgres:pw@db:5432/glade_sample \
+  -e DATABASE_URL="postgresql://postgres:$POSTGRES_PASSWORD@db:5432/glade_sample" \
   galaxy-api python load_data.py
 
 # API
 docker run -d --name api --network galaxynet -p 8000:8000 \
-  -e DATABASE_URL=postgresql://postgres:pw@db:5432/glade_sample galaxy-api
+  -e DATABASE_URL="postgresql://postgres:$POSTGRES_PASSWORD@db:5432/glade_sample" galaxy-api
 ```
+
+`$POSTGRES_PASSWORD` lives in the shell that created it — a new terminal needs it set
+again before any of the commands above.
 
 Docs at http://localhost:8000/docs
 
@@ -169,7 +189,7 @@ Find galaxies within a given angular radius of a sky position, optionally narrow
 |---|---|---|
 | `ra` | float | Right Ascension in degrees (0–360) |
 | `dec` | float | Declination in degrees (−90–90) |
-| `radius` | float | Search radius in degrees |
+| `radius` | float | Search radius in degrees (max 10) |
 | `redshift_min` | float | Minimum redshift |
 | `redshift_max` | float | Maximum redshift |
 | `dist_min` | float | Minimum luminosity distance (Mpc) |
