@@ -24,6 +24,22 @@ docker run -d --name api --network galaxynet -p "$HOST_PORT:8000" --restart unle
     -e DATABASE_URL="postgresql://galaxy_ro:$GALAXY_RO_PASSWORD@db:5432/glade_sample" \
     galaxy-api >/dev/null
 
-sleep 2
+# Docker publishes the port before uvicorn binds it, so an immediate request is
+# reset rather than refused. Retry until it answers.
+for _ in $(seq 1 30); do
+    if curl -fsS "localhost:$HOST_PORT/health" >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+
 docker logs api --tail 20
-curl -fsS "localhost:$HOST_PORT/health" && echo
+
+if curl -fsS "localhost:$HOST_PORT/health"; then
+    echo
+    echo "api is up on port $HOST_PORT"
+else
+    echo
+    echo "api did not respond on port $HOST_PORT — see the logs above" >&2
+    exit 1
+fi
