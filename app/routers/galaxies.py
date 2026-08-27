@@ -45,7 +45,7 @@ def search_galaxies(
 def cone_search(
     ra: float = Query(..., ge=0, le=360, description="Right Ascension in degrees (0–360)"),
     dec: float = Query(..., ge=-90, le=90, description="Declination in degrees (-90–90)"),
-    radius: float = Query(..., gt=0, description="Search radius in degrees"),
+    radius: float = Query(..., gt=0, le=10.0, description="Search radius in degrees (max 10)"),
     redshift_min: Optional[float] = Query(default=None, ge=0),
     redshift_max: Optional[float] = Query(default=None, ge=0),
     dist_min: Optional[float] = Query(default=None, gt=0),
